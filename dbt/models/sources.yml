@@ -1,0 +1,46 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Source-system extracts loaded as-is by warehouse/load_raw.py (or COPY INTO on Snowflake)."
+    schema: raw
+    config:
+      loaded_at_field: _loaded_at
+      freshness:
+        warn_after: {count: 36, period: hour}
+        error_after: {count: 72, period: hour}
+    tables:
+      - name: athletes
+        config:
+          freshness: null   # static roster extract
+      - name: fixtures
+        config:
+          freshness: null
+      - name: training_sessions
+        description: "GPS + session-RPE feed. Two vendors with different speed units; contains duplicate deliveries."
+      - name: wellness_daily
+        description: "Morning HRV / resting HR / self-report. Incomplete: athletes skip days."
+      - name: sleep_daily
+      - name: nutrition_daily
+        description: "Self-reported food log. Incomplete and noisy by design."
+      - name: injuries
+      - name: match_player_stats
+      - name: physical_tests
+
+  - name: ml
+    description: "Tables written back by the Python ML layer (ml/). Not available until `make ml` has run."
+    schema: ml
+    tables:
+      - name: injury_risk_scores
+        columns:
+          - name: risk_band
+            data_tests:
+              - accepted_values:
+                  arguments:
+                    values: ["Low", "Moderate", "High", "Critical"]
+      - name: performance_predictions
+      - name: lever_recommendations
+      - name: model_metrics
+      - name: feature_importance
+      - name: calibration_curve
+      - name: recommendation_validation

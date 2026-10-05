@@ -1,0 +1,160 @@
+version: 2
+
+models:
+  - name: stg_athletes
+    description: "Roster, one row per athlete. Position codes upper-cased."
+    columns:
+      - name: athlete_id
+        data_tests: [unique, not_null]
+      - name: position_code
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["GK", "CB", "FB", "DM", "CM", "AM", "W", "ST"]
+      - name: weight_kg
+        data_tests:
+          - value_between:
+              arguments: {min_value: 50, max_value: 120}
+      - name: height_cm
+        data_tests:
+          - value_between:
+              arguments: {min_value: 155, max_value: 210}
+
+  - name: stg_training_sessions
+    description: >
+      One row per session. Deduplicated on session_id, max speed normalised to km/h across the two
+      GPS vendors, physiologically impossible readings nulled. See the header of the model for the
+      full list of cleaning rules.
+    columns:
+      - name: session_id
+        data_tests: [unique, not_null]
+      - name: athlete_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('stg_athletes'), field: athlete_id}
+      - name: session_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["match", "training", "gym", "recovery", "rehab", "individual"]
+      - name: srpe_load
+        description: "Session RPE load in arbitrary units = duration (min) x RPE (0-10)."
+        data_tests:
+          - not_null
+          - value_between:
+              arguments: {min_value: 0, max_value: 1500}
+      - name: max_speed_kmh
+        data_tests:
+          - value_between:
+              arguments: {min_value: 0, max_value: 45}
+
+  - name: stg_wellness_daily
+    description: "Morning HRV / resting HR / self-report. Out-of-range sensor values nulled."
+    data_tests:
+      - unique_combination:
+          arguments: {combination_of_columns: [athlete_id, date_day]}
+    columns:
+      - name: hrv_rmssd_ms
+        data_tests:
+          - value_between:
+              arguments: {min_value: 5, max_value: 250}
+      - name: athlete_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('stg_athletes'), field: athlete_id}
+
+  - name: stg_sleep_daily
+    description: "Wearable sleep. date_day is the wake-up date."
+    data_tests:
+      - unique_combination:
+          arguments: {combination_of_columns: [athlete_id, date_day]}
+    columns:
+      - name: sleep_hours
+        data_tests:
+          - value_between:
+              arguments: {min_value: 2, max_value: 14}
+
+  - name: stg_nutrition_daily
+    description: "Self-reported nutrition with per-kg values computed from roster body mass."
+    data_tests:
+      - unique_combination:
+          arguments: {combination_of_columns: [athlete_id, date_day]}
+    columns:
+      - name: protein_gpkg
+        data_tests:
+          - value_between:
+              arguments: {min_value: 0.2, max_value: 5}
+      - name: carbs_gpkg
+        data_tests:
+          - value_between:
+              arguments: {min_value: 0.5, max_value: 20}
+
+  - name: stg_injuries
+    description: "Time-loss injuries with severity band and the unavailable window."
+    columns:
+      - name: injury_id
+        data_tests: [unique, not_null]
+      - name: athlete_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('stg_athletes'), field: athlete_id}
+      - name: severity
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["minimal", "mild", "moderate", "severe"]
+      - name: days_out
+        data_tests:
+          - value_between:
+              arguments: {min_value: 1, max_value: 365}
+
+  - name: stg_matches
+    description: "Player-level match statistics joined to fixture context."
+    columns:
+      - name: match_stat_id
+        data_tests: [unique, not_null]
+      - name: performance_rating
+        data_tests:
+          - value_between:
+              arguments: {min_value: 1, max_value: 10}
+      - name: athlete_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('stg_athletes'), field: athlete_id}
+
+  - name: stg_fixtures
+    columns:
+      - name: fixture_id
+        data_tests: [unique, not_null]
+
+  - name: stg_physical_tests
+    columns:
+      - name: test_id
+        data_tests: [unique, not_null]
+      - name: athlete_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('stg_athletes'), field: athlete_id}
+
+# ---------------------------------------------------------------------------
+# Unit tests: pure-logic checks on mocked inputs, no warehouse data needed
+# ---------------------------------------------------------------------------
+unit_tests:
+  - name: stg_training_sessions_normalises_vendor_units_and_dedupes
+    description: >
+      VENDOR_B reports max speed in m/s (x3.6 -> km/h); a 99.9 sensor glitch becomes NULL; a duplicate
+      delivery of the same session keeps only the latest load.
+    model: stg_training_sessions
+    given:
+      - input: source('raw', 'training_sessions')
+        rows:
+          - {session_id: S1, athlete_id: A1, session_date: 2025-01-01, session_type: training, duration_min: 60, rpe: 5, total_distance_m: 6000, hsr_distance_m: 400, sprint_count: 5, max_speed_raw: 8.0, speed_unit: ms,  player_load: 500, avg_hr_bpm: 140, gps_vendor: VENDOR_B, _loaded_at: 2025-01-02 01:00:00}
+          - {session_id: S2, athlete_id: A1, session_date: 2025-01-02, session_type: match,    duration_min: 90, rpe: 8, total_distance_m: 10000, hsr_distance_m: 900, sprint_count: 20, max_speed_raw: 31.0, speed_unit: kmh, player_load: 900, avg_hr_bpm: 160, gps_vendor: VENDOR_A, _loaded_at: 2025-01-03 01:00:00}
+          - {session_id: S2, athlete_id: A1, session_date: 2025-01-02, session_type: match,    duration_min: 90, rpe: 8, total_distance_m: 10000, hsr_distance_m: 900, sprint_count: 20, max_speed_raw: 31.0, speed_unit: kmh, player_load: 900, avg_hr_bpm: 160, gps_vendor: VENDOR_A, _loaded_at: 2025-01-03 07:00:00}
+          - {session_id: S3, athlete_id: A1, session_date: 2025-01-03, session_type: training, duration_min: 60, rpe: 5, total_distance_m: 6000, hsr_distance_m: 400, sprint_count: 5, max_speed_raw: 99.9, speed_unit: kmh, player_load: 500, avg_hr_bpm: 140, gps_vendor: VENDOR_A, _loaded_at: 2025-01-04 01:00:00}
+    expect:
+      rows:
+        - {session_id: S1, max_speed_kmh: 28.8, srpe_load: 300}
+        - {session_id: S2, max_speed_kmh: 31.0, srpe_load: 720}
+        - {session_id: S3, max_speed_kmh: null, srpe_load: 300}

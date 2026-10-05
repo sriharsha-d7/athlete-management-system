@@ -1,0 +1,46 @@
+name: athlete_ams
+version: "1.0.0"
+config-version: 2
+profile: athlete_ams
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+analysis-paths: ["analyses"]
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # Must match the window written by data_gen/generate.py
+  calendar_start: "2024-07-01"
+  calendar_end: "2026-09-30"
+  # A rolling window needs this many prior days before a feature row is trusted
+  min_history_days: 28
+  label_horizon_days: 7
+
+models:
+  athlete_ams:
+    staging:
+      +materialized: view
+      +schema: staging
+      +tags: ["pre_ml"]
+    intermediate:
+      +materialized: table
+      +schema: intermediate
+      +tags: ["pre_ml"]
+    marts:
+      +materialized: table
+      +schema: marts
+      +tags: ["pre_ml"]
+      post_ml:
+        +tags: ["post_ml"]
+
+seeds:
+  athlete_ams:
+    +schema: reference
+    +tags: ["pre_ml"]
+
+# Surface every test failure with enough rows to debug, without flooding the log
+data_tests:
+  +store_failures: false
+  +severity: error

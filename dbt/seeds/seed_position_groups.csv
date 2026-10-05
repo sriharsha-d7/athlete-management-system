@@ -1,0 +1,9 @@
+position_code,position_name,position_group,typical_demands
+GK,Goalkeeper,Goalkeeper,"Explosive power, reactive agility, low running volume"
+CB,Centre-back,Defender,"Aerial power, strength, repeated short sprints"
+FB,Full-back,Wide,"Highest repeated high-speed running, aerobic capacity"
+DM,Defensive midfielder,Midfielder,"Aerobic capacity, high-volume covering distance"
+CM,Central midfielder,Midfielder,"Aerobic capacity, high total distance, repeated efforts"
+AM,Attacking midfielder,Midfielder,"Acceleration, agility, short high-intensity bursts"
+W,Winger,Wide,"Top speed, repeated sprint ability"
+ST,Striker,Forward,"Acceleration, power, finishing under fatigue"

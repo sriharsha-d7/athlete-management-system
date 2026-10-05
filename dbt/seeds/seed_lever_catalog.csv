@@ -1,0 +1,11 @@
+lever_id,label,category,metric,feature_shifts,step_size,step_type,allow_negative,unit,horizon,coaching_action
+sleep_duration,Sleep more,recovery,sleep_hours_7d,sleep_hours_3d:1.0|sleep_hours_7d:1.0|sleep_hours_28d:0.5,0.5,add,false,hours/night,weeks,"Fix a consistent lights-out time that protects 8.5 h in bed; screens off 45 min before; cool dark room; 20-min nap after short nights or early sessions."
+protein_intake,Eat more protein,nutrition,protein_gpkg_7d,protein_gpkg_7d:1.0,0.3,add,false,g/kg/day,weeks,"Spread 0.3-0.4 g/kg across 4-5 meals; add a protein-rich snack within 2 h of every session."
+carb_fueling,Fuel carbohydrates to load,nutrition,carbs_gpkg_7d,carbs_gpkg_3d:1.0|carbs_gpkg_7d:1.0,1.0,add,false,g/kg/day,days,"Scale carbs to the day's load: +1 g/kg on moderate days, 6-8 g/kg the day before a match; carbs during sessions longer than 75 min."
+hydration,Hydrate more,nutrition,hydration_l_7d,hydration_l_3d:1.0|hydration_l_7d:1.0,0.4,add,false,L/day,days,"Pre-load 500 ml before sessions, weigh in/out to track sweat loss, and replace 150% of lost mass."
+load_management,Re-balance training load,load,acwr,acute_load_7d:1.0,0.15,scale,true,ratio,days,"Keep week-on-week load change within ~10-15%; swap one high-intensity exposure for technical work when ACWR > 1.3, or add controlled volume when < 0.8."
+aerobic_capacity,Build aerobic capacity,physical,yoyo_ir1_m,yoyo_ir1_m:1.0,120,add,false,metres,months,"Two weekly high-intensity interval sessions (e.g. 4 x 4 min at 90-95% max HR) on top of match and training load."
+sprint_speed,Improve sprint speed,physical,sprint_30m_s,sprint_30m_s:1.0,-0.05,add,false,seconds (30 m),months,"One weekly max-velocity exposure (>=95% top speed) plus acceleration and technique drills, fully rested between reps."
+explosive_power,Increase explosive power,physical,cmj_cm,cmj_cm:1.0,2.0,add,false,cm,months,"Add jump and plyometric work twice weekly; pair with heavy lower-body strength."
+max_strength,Increase max strength,physical,squat_1rm_rel,squat_1rm_rel:1.0,0.15,add,false,x bodyweight,months,"Two progressive strength sessions per week (squat/hinge patterns), 3-5 reps at 80-90% 1RM."
+hamstring_strength,Strengthen hamstrings,physical,nordic_n,nordic_n:1.0,40,add,false,N (per leg),months,"Eccentric hamstring programme (Nordics) 2 x weekly, progressing volume over 8-10 weeks."

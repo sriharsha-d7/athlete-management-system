@@ -1,0 +1,118 @@
+version: 2
+
+models:
+  - name: dim_athlete
+    description: "Athlete dimension with position group (via seed) and body metrics."
+    columns:
+      - name: athlete_id
+        data_tests: [unique, not_null]
+      - name: position_group
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["Goalkeeper", "Defender", "Wide", "Midfielder", "Forward"]
+
+  - name: dim_date
+    description: "Calendar dimension with season and season phase."
+    columns:
+      - name: date_day
+        data_tests: [unique, not_null]
+      - name: season_phase
+        data_tests:
+          - accepted_values:
+              arguments: {values: ["off-season", "pre-season", "in-season"]}
+
+  - name: fct_athlete_day
+    description: >
+      Wide daily fact (athlete x day): load, recovery, nutrition, physical qualities, availability and
+      two heuristic business metrics (readiness_score, acwr_zone). Primary source for dashboards.
+    data_tests:
+      - unique_combination:
+          arguments: {combination_of_columns: [athlete_id, date_day]}
+    columns:
+      - name: readiness_score
+        description: "Transparent 0-100 heuristic from HRV z-score, 3-day sleep, soreness and fatigue. Not a clinical measure."
+        data_tests:
+          - value_between:
+              arguments: {min_value: 0, max_value: 100}
+      - name: acwr_zone
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["undertrained", "sweet_spot", "caution", "danger"]
+
+  - name: fct_injuries
+    description: "Time-loss injuries enriched with the athlete's state on the morning of onset."
+    columns:
+      - name: injury_id
+        data_tests: [unique, not_null]
+      - name: athlete_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_athlete'), field: athlete_id}
+
+  - name: fct_match_performance
+    columns:
+      - name: match_stat_id
+        data_tests: [unique, not_null]
+
+  - name: fct_physical_tests
+    columns:
+      - name: test_id
+        data_tests: [unique, not_null]
+
+  - name: mart_ml_injury_features
+    description: "Injury model training/scoring table. Features are defined once in macros/ml_feature_columns.sql."
+    data_tests:
+      - unique_combination:
+          arguments: {combination_of_columns: [athlete_id, date_day]}
+    columns:
+      - name: injury_next_7d
+        data_tests:
+          - accepted_values:
+              arguments: {values: [0, 1], quote: false}
+
+  - name: mart_ml_performance_features
+    description: "Match-performance model table: pre-match state -> performance_rating."
+    data_tests:
+      - unique_combination:
+          arguments: {combination_of_columns: [athlete_id, date_day]}
+    columns:
+      - name: performance_rating
+        data_tests:
+          - not_null
+          - value_between:
+              arguments: {min_value: 1, max_value: 10}
+
+  - name: mart_position_benchmarks
+    description: >
+      Median / IQR of pre-match state among top-quartile performers, per position group and metric.
+      Answers: what does a high performer in this position look like?
+    data_tests:
+      - unique_combination:
+          arguments: {combination_of_columns: [position_group, metric]}
+
+  - name: mart_athlete_current_state
+    description: "One row per athlete at the latest date with rule-based risk flags."
+    columns:
+      - name: athlete_id
+        data_tests: [unique, not_null]
+
+  - name: mart_athlete_gap_analysis
+    description: >
+      Descriptive "what is he missing" table: current value vs target for ten controllable or testable
+      metrics, with shortfall, status and percentile within position group.
+    data_tests:
+      - unique_combination:
+          arguments: {combination_of_columns: [athlete_id, metric]}
+    columns:
+      - name: shortfall
+        data_tests:
+          - value_between:
+              arguments: {min_value: 0}
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["on_target", "below_target", "below_minimum", "out_of_band"]

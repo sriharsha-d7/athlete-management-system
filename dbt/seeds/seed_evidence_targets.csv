@@ -1,0 +1,11 @@
+metric,direction,target_min,target_optimal,target_max,unit,rationale
+sleep_hours_7d,higher_better,7.5,8.5,,hours/night,"Athlete sleep guidance generally recommends at least 8 h; 7-9 h is the adult range and athletes with high load trend to the top of it"
+protein_gpkg_7d,higher_better,1.4,1.8,,g/kg/day,"Sports-nutrition position stands cluster around 1.4-2.0 g/kg/day for athletes"
+carbs_gpkg_7d,higher_better,5.0,6.5,,g/kg/day,"Moderate training load ~5-7 g/kg/day; heavier load 6-10 g/kg/day"
+hydration_l_7d,higher_better,2.6,3.2,,L/day,"Approximates 35-45 ml/kg/day for a 75-80 kg athlete before sweat losses; individualise with sweat testing"
+acwr,band,0.8,1.05,1.3,ratio,"Acute:chronic workload 'sweet spot' 0.8-1.3; spikes above ~1.5 are associated with higher injury risk in the monitoring literature"
+nordic_n,higher_better,300,350,,N (per leg),"Eccentric hamstring strength; low values are associated with hamstring injury in screening studies - set per club protocol"
+cmj_cm,higher_better,,,,cm,"No universal norm: target = median of top-quartile performers in the athlete's position group (mart_position_benchmarks)"
+sprint_30m_s,lower_better,,,,seconds (30 m),"No universal norm: target = median of top-quartile performers in the athlete's position group (mart_position_benchmarks)"
+yoyo_ir1_m,higher_better,,,,metres,"No universal norm: target = median of top-quartile performers in the athlete's position group (mart_position_benchmarks)"
+squat_1rm_rel,higher_better,,,,x bodyweight,"No universal norm: target = median of top-quartile performers in the athlete's position group (mart_position_benchmarks)"

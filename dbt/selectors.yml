@@ -1,0 +1,19 @@
+selectors:
+  # Everything that does NOT depend on model output.
+  # Tags inherit down folders, so models/marts/post_ml/* carry BOTH tags and must be excluded explicitly.
+  - name: pre_ml
+    description: "Seeds -> staging -> intermediate -> marts (incl. ML feature marts), excluding post_ml"
+    definition:
+      union:
+        - method: tag
+          value: pre_ml
+        - exclude:
+            - method: tag
+              value: post_ml
+
+  # Marts that join Python-written scores/recommendations back in
+  - name: post_ml
+    description: "Marts that depend on the ml.* source tables"
+    definition:
+      method: tag
+      value: post_ml

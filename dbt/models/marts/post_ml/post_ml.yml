@@ -1,0 +1,67 @@
+version: 2
+
+models:
+  - name: mart_athlete_risk_daily
+    description: "Athlete x day injury risk (calibrated 7-day probability) and expected match rating."
+    data_tests:
+      - unique_combination:
+          arguments: {combination_of_columns: [athlete_id, date_day]}
+    columns:
+      - name: injury_risk_7d
+        data_tests:
+          - not_null
+          - value_between:
+              arguments: {min_value: 0, max_value: 1}
+      - name: risk_band
+        data_tests:
+          - accepted_values:
+              arguments: {values: ["Low", "Moderate", "High", "Critical"]}
+      - name: predicted_rating
+        data_tests:
+          - value_between:
+              arguments: {min_value: 1, max_value: 10}
+
+  - name: mart_athlete_action_plan
+    description: >
+      One row per athlete x recommended lever, ranked by priority. Each row says what to change, by how
+      much, the expected gain in match rating and reduction in 7-day injury risk, and the coaching action.
+      Effects are model estimates from observational data, not trial results - see the README's
+      limitations section.
+    data_tests:
+      - unique_combination:
+          arguments: {combination_of_columns: [athlete_id, lever_id]}
+    columns:
+      - name: athlete_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_athlete'), field: athlete_id}
+      - name: priority_rank
+        data_tests:
+          - value_between:
+              arguments: {min_value: 1, max_value: 20}
+      - name: coaching_action
+        data_tests: [not_null]
+      - name: expected_risk_reduction_pp
+        description: "Percentage-point drop in 7-day injury probability if the lever is pulled (negative = increases risk)."
+
+  - name: mart_squad_overview
+    description: "Team-level snapshot at the latest date."
+    columns:
+      - name: team_id
+        data_tests: [unique, not_null]
+
+exposures:
+  - name: athlete_performance_dashboard
+    type: dashboard
+    maturity: medium
+    url: http://localhost:8501
+    description: "Streamlit app (app/streamlit_app.py): squad readiness, athlete profile, action plan, model quality."
+    depends_on:
+      - ref('mart_athlete_action_plan')
+      - ref('mart_athlete_risk_daily')
+      - ref('mart_squad_overview')
+      - ref('mart_athlete_gap_analysis')
+      - ref('fct_athlete_day')
+    owner:
+      name: Performance Analytics

@@ -1,0 +1,56 @@
+version: 2
+
+seeds:
+  - name: seed_position_groups
+    description: "Maps granular position codes to position groups used for benchmarking."
+    config:
+      column_types:
+        position_code: varchar
+    columns:
+      - name: position_code
+        data_tests: [unique, not_null]
+      - name: position_group
+        data_tests: [not_null]
+
+  - name: seed_evidence_targets
+    description: >
+      Evidence-informed target ranges for controllable metrics (sleep, nutrition, load, hamstring
+      strength). These are general sport-science guidance, not individual prescriptions - a club's
+      sports dietitian / physician should replace them with their own protocols.
+    config:
+      column_types:
+        target_min: double
+        target_optimal: double
+        target_max: double
+    columns:
+      - name: metric
+        data_tests: [unique, not_null]
+      - name: direction
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["higher_better", "lower_better", "band"]
+
+  - name: seed_lever_catalog
+    description: >
+      Catalog of controllable levers the recommendation engine can pull. feature_shifts says which
+      model features move when the lever moves (feature:weight, pipe separated); step_type 'add'
+      adds step_size to those features, 'scale' multiplies them by (1 + step_size).
+    config:
+      column_types:
+        step_size: double
+    columns:
+      - name: lever_id
+        data_tests: [unique, not_null]
+      - name: category
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["recovery", "nutrition", "load", "physical"]
+      - name: step_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["add", "scale"]
+      - name: metric
+        data_tests: [not_null]
