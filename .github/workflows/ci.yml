@@ -61,7 +61,7 @@ jobs:
       - name: dbt parse against the snowflake target (no connection made)
         env:
           DBT_TARGET: snowflake
-          DBT_PROFILES_DIR: dbt
+          DBT_PROFILES_DIR: ${{ github.workspace }}/dbt
           SNOWFLAKE_ACCOUNT: dummy
           SNOWFLAKE_USER: dummy
           SNOWFLAKE_PASSWORD: dummy
