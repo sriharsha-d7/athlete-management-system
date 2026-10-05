@@ -1,0 +1,68 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      # Whole pipeline on DuckDB: simulate -> load -> dbt (models + 120 tests) -> train -> post-ML marts
+      - name: Run pipeline end to end
+        run: make all
+
+      - name: Python tests (unit + integration against the built warehouse)
+        run: make test
+
+      - name: Dashboard smoke test
+        run: |
+          python - <<'EOF'
+          from streamlit.testing.v1 import AppTest
+          at = AppTest.from_file("app/streamlit_app.py", default_timeout=120).run()
+          assert not at.exception, [e.value for e in at.exception]
+          EOF
+
+      - name: Generate dbt docs
+        run: cd dbt && dbt docs generate --target dev
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dbt-docs
+          path: |
+            dbt/target/index.html
+            dbt/target/catalog.json
+            dbt/target/manifest.json
+
+  # Compiles the Snowflake dialect without needing credentials, so adapter-specific
+  # SQL regressions are caught on every PR even though CI never touches a real account.
+  snowflake-compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install dbt-core dbt-snowflake
+      - name: dbt parse against the snowflake target (no connection made)
+        env:
+          DBT_TARGET: snowflake
+          DBT_PROFILES_DIR: dbt
+          SNOWFLAKE_ACCOUNT: dummy
+          SNOWFLAKE_USER: dummy
+          SNOWFLAKE_PASSWORD: dummy
+        run: cd dbt && dbt parse --target snowflake
