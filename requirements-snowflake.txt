@@ -1,0 +1,3 @@
+# Extra dependencies for the production (Snowflake) target.  pip install -r requirements.txt -r requirements-snowflake.txt
+dbt-snowflake>=1.9
+snowflake-connector-python[pandas]>=3.12

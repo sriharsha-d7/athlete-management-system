@@ -1,0 +1,23 @@
+# data & artifacts (all reproducible with `make all`)
+data/raw/
+data/*.duckdb
+data/*.duckdb.wal
+/models/
+*.joblib
+
+# dbt
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+logs/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# secrets: never commit warehouse credentials
+.env
+*.p8
+profiles.local.yml
